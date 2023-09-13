@@ -1,8 +1,19 @@
+import 'package:codebrikapp/bloc/app_bloc/app_event.dart';
+import 'package:codebrikapp/bloc/index_bloc.dart';
+import 'package:codebrikapp/bloc/user_bloc/user_bloc.dart';
+import 'package:codebrikapp/bloc/user_bloc/user_event.dart';
 import 'package:codebrikapp/const/colors.dart';
 import 'package:codebrikapp/custom/custom_text.dart';
-import 'package:codebrikapp/custom/custom_textfields.dart';
+import 'package:codebrikapp/utils/functions.dart';
 import 'package:codebrikapp/utils/styles.dart';
+import 'package:codebrikapp/widgets/exchange_details.dart';
+import 'package:codebrikapp/widgets/master_checkbox.dart';
+import 'package:codebrikapp/widgets/personal_details.dart';
+import 'package:codebrikapp/widgets/profit_loss_sharing.dart';
+import 'package:codebrikapp/widgets/trade_limit_info.dart';
+import 'package:codebrikapp/widgets/user_type_row.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 class CreateUser extends StatefulWidget {
   const CreateUser({super.key});
@@ -12,53 +23,21 @@ class CreateUser extends StatefulWidget {
 }
 
 class _CreateUserState extends State<CreateUser> {
-  final TextEditingController nameController = TextEditingController();
-  final TextEditingController usernameController = TextEditingController();
-  final TextEditingController passwordController = TextEditingController();
-  final TextEditingController retypePasswordController =
-      TextEditingController();
-  final TextEditingController mobileController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
-  final TextEditingController creditController = TextEditingController();
-  final TextEditingController remarkController = TextEditingController();
-  final TextEditingController profitController = TextEditingController();
-  final TextEditingController brkController = TextEditingController();
-  List items = ['Master', 'Single'];
-  List selectExchangeListIndex = [];
-  List selectTradeListIndex = [];
-  List exchangeList = [
-    "N",
-    "M",
-    "S",
-    "OTHERS",
-    "CMX",
-    "NCDX",
-    "MINI",
-    "SPOT",
-    "CP"
-  ];
-  List tradeList = ["N", "M", "S", "CMX", "NCDX", "MINI"];
+  List<Map<String, String>> selectExchangeListIndex = [];
+  List<Map<String, String>> selectTradeListIndex = [];
+
   bool valuefirst = false;
   bool valuesecond = false;
 
   @override
-  void dispose() {
-    nameController.dispose();
-    usernameController.dispose();
-    passwordController.dispose();
-    retypePasswordController.dispose();
-    mobileController.dispose();
-    cityController.dispose();
-    creditController.dispose();
-    remarkController.dispose();
-    profitController.dispose();
-    brkController.dispose();
-    super.dispose();
+  void initState() {
+    appBloc.add(GenerateToken());
+    super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
-    final width = MediaQuery.of(context).size.width;
+    final userState = context.watch<UserBloc>().state;
 
     return Scaffold(
       appBar: AppBar(
@@ -79,21 +58,21 @@ class _CreateUserState extends State<CreateUser> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              userTypeRow(width),
+              UserTypeRow(),
               SizedBox(
                 height: 10,
               ),
-              personalDetails(),
+              PersonalDetails(),
               SizedBox(height: 15),
-              profittlossSharing(),
+              ProfitLossSharing(),
               SizedBox(height: 15),
-              exchangeAllow(),
+              ExchangeDetails(),
               SizedBox(height: 15),
-              tradeLimit(),
+              TradeLimitInfo(),
               SizedBox(
                 height: 15,
               ),
-              masterCheckbox(),
+              MasterCheckBox(),
               SizedBox(
                 height: 15,
               ),
@@ -107,220 +86,21 @@ class _CreateUserState extends State<CreateUser> {
 
   Widget button() {
     return Container(
-              width: double.infinity,
-              padding: EdgeInsets.symmetric(vertical: 5),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(10),
-                color: blueColor,
-              ),
-              child: TextButton(
-                onPressed: () {},
-                child: CustomText(
-                  title: 'CREATE',
-                  style: ourStyle(color: whiteColor),
-                ),
-              ),
-            );
-  }
-
-  Widget masterCheckbox() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      width: double.infinity,
+      padding: EdgeInsets.symmetric(vertical: 5),
       decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: greyColor.withOpacity(0.3)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CustomText(title: 'Add Master'),
-              Checkbox(
-                activeColor: blackColor,
-                value: this.valuefirst,
-                onChanged: (bool? value) {
-                  setState(() {
-                    this.valuefirst = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              CustomText(title: 'Change password on first login'),
-              Checkbox(
-                activeColor: blackColor,
-                value: this.valuesecond,
-                onChanged: (bool? value) {
-                  setState(() {
-                    this.valuesecond = value!;
-                  });
-                },
-              ),
-            ],
-          ),
-        ],
+        borderRadius: BorderRadius.circular(10),
+        color: blueColor,
       ),
-    );
-  }
-
-  Widget tradeLimit() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: greyColor.withOpacity(0.3)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CustomText(title: 'High Low Between Trade Limit'),
-          dynamicListForCheckbox(tradeList,selectTradeListIndex)
-        ],
-      ),
-    );
-  }
-
-  Widget exchangeAllow() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: greyColor.withOpacity(0.3)),
-      child: dynamicListForCheckbox(exchangeList,selectExchangeListIndex),
-    );
-  }
-
-  Widget dynamicListForCheckbox(List<dynamic> list,List selectIndex) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CustomText(title: 'Exchange Allow'),
-        GridView.builder(
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              crossAxisSpacing: 0,
-              mainAxisSpacing: 0,
-              mainAxisExtent: 40),
-          shrinkWrap: true,
-          itemCount: list.length,
-          physics: NeverScrollableScrollPhysics(),
-          itemBuilder: (_, int index) {
-            return CheckboxListTile(
-              checkColor: blackColor,
-              title: CustomText(title: list[index]),
-              value: selectIndex.contains(index),
-              onChanged: (_) {
-                print(selectIndex);
-                if (selectIndex.contains(index)) {
-                  setState(() {
-                    selectIndex.remove(index); // unselect
-                  });
-                } else {
-                  setState(() {
-                    selectIndex.add(index); // select
-                  });
-                }
-              },
-              controlAffinity: ListTileControlAffinity.leading,
-            );
-          },
+      child: TextButton(
+        onPressed: () {
+          userBloc.add(SubmitUserData());
+        },
+        child: CustomText(
+          title: 'CREATE',
+          style: ourStyle(color: whiteColor),
         ),
-      ],
-    );
-  }
-
-  Widget profittlossSharing() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: greyColor.withOpacity(0.3)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CustomText(title: 'partnership share Detail'),
-          SizedBox(
-            height: 10,
-          ),
-          CustomTextFields(
-              title: 'Profitt & Loss sharing*',
-              controller: profitController,
-              needSpace: false),
-          CustomText(title: 'Our 80 | Remaining:0'),
-          SizedBox(
-            height: 15,
-          ),
-          CustomTextFields(
-              title: 'Brk Sharing*',
-              controller: profitController,
-              needSpace: false),
-          CustomText(title: 'Our 80 | Remaining:0'),
-        ],
       ),
-    );
-  }
-
-  Widget personalDetails() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: greyColor.withOpacity(0.3)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CustomText(title: 'Personal Details'),
-          SizedBox(
-            height: 10,
-          ),
-          CustomTextFields(title: 'Name**', controller: nameController),
-          CustomTextFields(title: 'Username*', controller: usernameController),
-          CustomTextFields(title: 'Password*', controller: passwordController),
-          CustomTextFields(
-              title: 'Retypr Password*', controller: retypePasswordController),
-          CustomTextFields(
-              title: 'Mobile Number', controller: mobileController),
-          CustomTextFields(title: 'City', controller: cityController),
-          CustomTextFields(title: 'Credit*', controller: creditController),
-          CustomTextFields(title: 'Remark', controller: remarkController),
-        ],
-      ),
-    );
-  }
-
-  Widget userTypeRow(double width) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        CustomText(
-            title: 'User Type',
-            style: ourStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        Container(
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(10),
-              color: Colors.white,
-              border: Border.all(color: Colors.black)),
-          width: 150,
-          child: ExpansionTile(
-            iconColor: Colors.black,
-            title: Text(
-              items[0],
-              style: ourStyle(),
-            ),
-            children: <Widget>[
-              ListTile(
-                title: Text(
-                  items[1],
-                  style: ourStyle(fontWeight: FontWeight.w700),
-                ),
-              )
-            ],
-          ),
-        ),
-      ],
     );
   }
 }
